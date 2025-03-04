@@ -23,6 +23,8 @@ pub enum Language {
     Cxx,
     C,
     Cython,
+    #[allow(dead_code)]
+    Haskell,
 }
 
 impl FromStr for Language {
@@ -54,6 +56,7 @@ impl Language {
         match self {
             Language::Cxx | Language::C => "typedef",
             Language::Cython => "ctypedef",
+            Language::Haskell => unreachable!(),
         }
     }
 }

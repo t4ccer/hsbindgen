@@ -721,6 +721,10 @@ impl Constant {
                 write!(out, " {} # = ", name);
                 language_backend.write_literal(out, value);
             }
+            Language::Haskell => {
+                write!(out, "{} = ", name);
+                language_backend.write_literal(out, value);
+            }
         }
 
         condition.write_after(config, out);

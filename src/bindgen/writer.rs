@@ -177,6 +177,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
                 self.new_line();
                 self.push_tab();
             }
+            Language::Haskell => unreachable!(),
         }
     }
 
@@ -192,6 +193,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
                 }
             }
             Language::Cython => {}
+            Language::Haskell => unreachable!(),
         }
     }
 

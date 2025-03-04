@@ -10,9 +10,11 @@ use std::io::Write;
 
 mod clike;
 mod cython;
+mod haskell;
 
 pub use clike::CLikeLanguageBackend;
 pub use cython::CythonLanguageBackend;
+pub use haskell::HaskellLanguageBackend;
 
 pub trait LanguageBackend: Sized {
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);

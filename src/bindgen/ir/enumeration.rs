@@ -732,6 +732,9 @@ impl Enum {
                     write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
             }
+            Language::Haskell => {
+                todo!()
+            }
         }
         out.open_brace();
 
@@ -784,7 +787,7 @@ impl Enum {
     ) {
         match config.language {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
-            Language::C | Language::Cxx => {}
+            Language::C | Language::Cxx | Language::Haskell => {}
             Language::Cython => out.write(config.style.cython_def()),
         }
 
