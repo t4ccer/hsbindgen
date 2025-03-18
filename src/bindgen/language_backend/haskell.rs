@@ -1,3 +1,5 @@
+#![allow(unused_variables)] // TODO
+
 use crate::bindgen::ir::{
     Documentation, Enum, Function, IntKind, ItemContainer, Literal, OpaqueItem, PrimitiveType,
     Static, Struct, Type, Typedef, Union,
@@ -26,7 +28,7 @@ impl<'a> HaskellLanguageBackend<'a> {
             write!(out, "IO (");
         }
 
-        match dbg!(t) {
+        match t {
             Type::Ptr {
                 ty,
                 is_const: _,
@@ -227,7 +229,22 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
     }
 
     fn write_literal<W: std::io::Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
-        todo!()
+        match l {
+            Literal::Expr(expr) => write!(out, "{}", expr),
+            Literal::Path {
+                associated_to,
+                name,
+            } => todo!(),
+            Literal::PostfixUnaryOp { op, value } => todo!(),
+            Literal::BinOp { left, op, right } => todo!(),
+            Literal::FieldAccess { base, field } => todo!(),
+            Literal::Struct {
+                path,
+                export_name,
+                fields,
+            } => todo!(),
+            Literal::Cast { ty, value } => todo!(),
+        }
     }
 
     fn write_bindings<W: std::io::Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
