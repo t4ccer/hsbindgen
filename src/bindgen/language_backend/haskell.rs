@@ -250,8 +250,11 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
     ) {
         for constant in &b.constants {
             if constant.uses_only_primitive_types() {
-                out.new_line_if_not_start();
-                constant.write(&b.config, self, out, None);
+                write!(out, "const_{} :: ", constant.export_name);
+                self.write_type(out, &constant.ty);
+                out.new_line();
+                write!(out, "const_{} = ", constant.export_name);
+                self.write_literal(out, &constant.value);
                 out.new_line();
             }
         }
