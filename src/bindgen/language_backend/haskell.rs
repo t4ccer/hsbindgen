@@ -127,7 +127,7 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
             out.new_line();
         }
 
-        write!(out, "{{-# OPTIONS_GHC -Wno-missing-import-lists -Wno-unused-imports -Wno-missing-export-lists -Wwarn #-}}");
+        write!(out, "{{-# OPTIONS_GHC -Wno-missing-import-lists -Wno-unused-imports -Wno-missing-export-lists -Wwarn -Wno-unused-local-binds #-}}");
         out.new_line();
 
         if let Some(namespace) = self.config.namespace.as_ref() {
@@ -146,6 +146,8 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
             out.new_line();
             out.write("import Foreign.C.Types");
             out.new_line();
+            out.write("import Foreign.Storable");
+            out.new_line();
         }
     }
 
@@ -156,7 +158,108 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
     }
 
     fn write_struct<W: std::io::Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
-        todo!()
+        out.write("data ");
+        write!(out, "{}", &s.export_name);
+        out.write(" = ");
+        write!(out, "{}", &s.export_name);
+        if !s.fields.is_empty() {
+            out.new_line();
+            out.write("  { ");
+        }
+        for (idx, f) in s.fields.iter().enumerate() {
+            if idx > 0 {
+                out.write("  , ");
+            }
+            write!(out, "{}", f.name);
+            out.write(" :: ");
+            self.write_type(out, &f.ty);
+            out.new_line();
+        }
+        if !s.fields.is_empty() {
+            out.write("  }");
+        }
+        out.new_line();
+
+        if !s.fields.is_empty() {
+            out.new_line();
+            out.write("instance Storable ");
+            write!(out, "{}", &s.export_name);
+            out.write(" where");
+            out.new_line();
+
+            out.write("  sizeOf _ = ");
+            out.new_line();
+
+            macro_rules! bind_ptrs {
+                ($start:expr) => {{
+                    out.write("    let");
+                    out.new_line();
+
+                    write!(out, "      p0 = {}", $start);
+                    out.new_line();
+                    for (idx, f) in s.fields.iter().enumerate() {
+                        write!(out, "      p{} = ", idx + 1);
+
+                        write!(out, "alignPtr (plusPtr p{} (sizeOf (undefined :: ", idx);
+                        self.write_type(out, &s.fields[idx].ty);
+                        out.write("))) (alignment (undefined :: ");
+                        self.write_type(out, &s.fields[(idx + 1) % s.fields.len()].ty);
+                        out.write("))");
+
+                        out.new_line();
+                    }
+                    out.write("    in ");
+                }};
+            }
+
+            bind_ptrs!("nullPtr");
+            write!(out, "minusPtr p{} p0", s.fields.len());
+            out.new_line();
+
+            out.write("  alignment _ = ");
+            for (idx, f) in s.fields.iter().enumerate() {
+                if idx > 0 {
+                    out.write(" `max` ");
+                }
+                out.write("alignment (undefined :: ");
+                self.write_type(out, &f.ty);
+                out.write(")");
+            }
+            out.new_line();
+
+            out.write("  peek p =");
+            out.new_line();
+            bind_ptrs!("p");
+            out.write("do");
+            out.new_line();
+            for (idx, _) in s.fields.iter().enumerate() {
+                out.write("");
+                write!(out, "      f{} <- peek (castPtr p{})", idx, idx);
+                out.new_line();
+            }
+            out.write("      pure $ ");
+            write!(out, "{}", &s.export_name);
+            for (idx, _) in s.fields.iter().enumerate() {
+                write!(out, " f{}", idx);
+            }
+            out.new_line();
+
+            out.write("  poke p (");
+            write!(out, "{}", &s.export_name);
+            for (idx, _) in s.fields.iter().enumerate() {
+                write!(out, " f{}", idx);
+            }
+            out.write(") =");
+            out.new_line();
+            bind_ptrs!("p");
+            out.write("do");
+            out.new_line();
+            for (idx, f) in s.fields.iter().enumerate() {
+                write!(out, "      poke (castPtr p{}) f{}", idx, idx);
+                out.new_line();
+            }
+            out.new_line();
+        }
     }
 
     fn write_union<W: std::io::Write>(&mut self, out: &mut SourceWriter<W>, u: &Union) {
