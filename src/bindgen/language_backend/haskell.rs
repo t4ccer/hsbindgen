@@ -286,7 +286,13 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
         out: &mut SourceWriter<W>,
         f: &Function,
     ) {
-        write!(out, "foreign import ccall \"{}\"", f.path.name());
+        let safety = if f.annotations.bool("haskell-unsafe").unwrap_or(false) {
+            "unsafe"
+        } else {
+            "safe"
+        };
+
+        write!(out, "foreign import ccall {} \"{}\"", safety, f.path.name());
         out.new_line();
         write!(out, "  {} :: ", f.path.name());
         for arg in &f.args {
@@ -298,7 +304,12 @@ impl<'a> LanguageBackend for HaskellLanguageBackend<'a> {
 
         out.new_line();
 
-        write!(out, "foreign import ccall \"&{}\"", f.path.name());
+        write!(
+            out,
+            "foreign import ccall {} \"&{}\"",
+            safety,
+            f.path.name()
+        );
         out.new_line();
         write!(out, "  {}_p :: FunPtr (", f.path.name());
         for arg in &f.args {
